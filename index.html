@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social Media Auto Uploader</title>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(30, 58, 138, 0.1);
+        }
+        
+        .status-pending { color: #f59e0b; }
+        .status-uploading { color: #3b82f6; }
+        .status-success { color: #10b981; }
+        .status-failed { color: #ef4444; }
+        
+        .platform-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+        
+        .loading-spinner {
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.success { background-color: #10b981; }
+        .toast.error { background-color: #ef4444; }
+        .toast.info { background-color: #3b82f6; }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="h-full bg-gray-50">
+  <div class="flex h-full"><!-- Sidebar -->
+   <div class="w-64 gradient-bg text-white flex-shrink-0">
+    <div class="p-6">
+     <h1 id="app-title" class="text-xl font-bold mb-2">Social Media Auto Uploader</h1>
+     <p id="welcome-message" class="text-blue-100 text-sm">Kelola dan upload konten ke media sosial secara otomatis</p>
+    </div>
+    <nav class="mt-8"><a href="#" onclick="showSection('dashboard')" class="nav-item flex items-center px-6 py-3 text-blue-100 hover:bg-blue-800 hover:text-white transition-colors" id="nav-dashboard">
+      <svg class="w-5 h-5 mr-3" fill="currentColor" viewbox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+      </svg> Dashboard </a> <a href="#" onclick="showSection('upload')" class="nav-item flex items-center px-6 py-3 text-blue-100 hover:bg-blue-800 hover:text-white transition-colors" id="nav-upload">
+      <svg class="w-5 h-5 mr-3" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+      </svg> Upload Konten </a> <a href="#" onclick="showSection('connections')" class="nav-item flex items-center px-6 py-3 text-blue-100 hover:bg-blue-800 hover:text-white transition-colors" id="nav-connections">
+      <svg class="w-5 h-5 mr-3" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd" />
+      </svg> Koneksi Platform </a> <a href="#" onclick="showSection('analytics')" class="nav-item flex items-center px-6 py-3 text-blue-100 hover:bg-blue-800 hover:text-white transition-colors" id="nav-analytics">
+      <svg class="w-5 h-5 mr-3" fill="currentColor" viewbox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
+      </svg> Analisis </a> <a href="#" onclick="showSection('history')" class="nav-item flex items-center px-6 py-3 text-blue-100 hover:bg-blue-800 hover:text-white transition-colors" id="nav-history">
+      <svg class="w-5 h-5 mr-3" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+      </svg> Riwayat Upload </a>
+    </nav>
+   </div><!-- Main Content -->
+   <div class="flex-1 overflow-auto"><!-- Dashboard Section -->
+    <div id="dashboard-section" class="p-8">
+     <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
+      <p class="text-gray-600">Ringkasan aktivitas upload media sosial Anda</p>
+     </div><!-- Stats Cards -->
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white rounded-xl p-6 card-shadow">
+       <div class="flex items-center">
+        <div class="p-3 rounded-full bg-blue-100">
+         <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewbox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+         </svg>
+        </div>
+        <div class="ml-4">
+         <p class="text-sm font-medium text-gray-600">Total Upload</p>
+         <p id="total-uploads" class="text-2xl font-bold text-gray-900">0</p>
+        </div>
+       </div>
+      </div>
+      <div class="bg-white rounded-xl p-6 card-shadow">
+       <div class="flex items-center">
+        <div class="p-3 rounded-full bg-green-100">
+         <svg class="w-6 h-6 text-green-600" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+         </svg>
+        </div>
+        <div class="ml-4">
+         <p class="text-sm font-medium text-gray-600">Berhasil</p>
+         <p id="success-uploads" class="text-2xl font-bold text-gray-900">0</p>
+        </div>
+       </div>
+      </div>
+      <div class="bg-white rounded-xl p-6 card-shadow">
+       <div class="flex items-center">
+        <div class="p-3 rounded-full bg-yellow-100">
+         <svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+         </svg>
+        </div>
+        <div class="ml-4">
+         <p class="text-sm font-medium text-gray-600">Menunggu</p>
+         <p id="pending-uploads" class="text-2xl font-bold text-gray-900">0</p>
+        </div>
+       </div>
+      </div>
+      <div class="bg-white rounded-xl p-6 card-shadow">
+       <div class="flex items-center">
+        <div class="p-3 rounded-full bg-red-100">
+         <svg class="w-6 h-6 text-red-600" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+         </svg>
+        </div>
+        <div class="ml-4">
+         <p class="text-sm font-medium text-gray-600">Gagal</p>
+         <p id="failed-uploads" class="text-2xl font-bold text-gray-900">0</p>
+        </div>
+       </div>
+      </div>
+     </div><!-- Recent Uploads -->
+     <div class="bg-white rounded-xl card-shadow">
+      <div class="p-6 border-b border-gray-200">
+       <h3 class="text-lg font-semibold text-gray-900">Upload Terbaru</h3>
+      </div>
+      <div id="recent-uploads" class="p-6">
+       <p class="text-gray-500 text-center py-8">Belum ada upload yang dilakukan</p>
+      </div>
+     </div>
+    </div><!-- Upload Section -->
+    <div id="upload-section" class="p-8 hidden">
+     <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">Upload Konten</h2>
+      <p class="text-gray-600">Upload konten baru ke media sosial pilihan Anda</p>
+     </div>
+     <div class="bg-white rounded-xl card-shadow p-8">
+      <form id="upload-form">
+       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8"><!-- Left Column -->
+        <div class="space-y-6">
+         <div><label for="image-url" class="block text-sm font-medium text-gray-700 mb-2">URL Gambar (Google Drive)</label>
+          <div class="space-y-3"><input type="url" id="image-url" name="image-url" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="https://drive.google.com/file/d/1ABC123xyz/view?usp=sharing"> <button type="button" onclick="convertGoogleDriveUrl()" class="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-sm"> 🔄 Konversi URL Google Drive </button>
+          </div>
+          <div class="text-sm text-gray-500 mt-2 space-y-1">
+           <p>• Masukkan URL Google Drive (pastikan file dapat diakses publik)</p>
+           <p>• Klik tombol "Konversi URL" untuk mengubah ke format yang dapat ditampilkan</p>
+           <p>• Format yang didukung: JPG, PNG, GIF</p>
+          </div>
+         </div>
+         <div><label for="caption" class="block text-sm font-medium text-gray-700 mb-2">Caption</label> <textarea id="caption" name="caption" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Tulis caption untuk postingan Anda..."></textarea>
+         </div>
+         <div><label class="block text-sm font-medium text-gray-700 mb-3">Platform Media Sosial</label>
+          <div class="space-y-3"><label class="flex items-center"> <input type="checkbox" name="platforms" value="instagram" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            <div class="ml-3 flex items-center">
+             <div class="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg mr-2"></div><span class="text-gray-700">Instagram</span> <span id="instagram-status" class="ml-2 text-xs px-2 py-1 rounded-full bg-red-100 text-red-600">Tidak Terhubung</span>
+            </div></label> <label class="flex items-center"> <input type="checkbox" name="platforms" value="facebook" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            <div class="ml-3 flex items-center">
+             <div class="w-6 h-6 bg-blue-600 rounded-lg mr-2"></div><span class="text-gray-700">Facebook</span> <span id="facebook-status" class="ml-2 text-xs px-2 py-1 rounded-full bg-red-100 text-red-600">Tidak Terhubung</span>
+            </div></label> <label class="flex items-center"> <input type="checkbox" name="platforms" value="tiktok" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+            <div class="ml-3 flex items-center">
+             <div class="w-6 h-6 bg-black rounded-lg mr-2"></div><span class="text-gray-700">TikTok</span> <span id="tiktok-status" class="ml-2 text-xs px-2 py-1 rounded-full bg-red-100 text-red-600">Tidak Terhubung</span>
+            </div></label>
+          </div>
+         </div>
+        </div><!-- Right Column - Preview -->
+        <div><label class="block text-sm font-medium text-gray-700 mb-3">Preview Konten</label>
+         <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+          <div id="image-preview" class="hidden"><img id="preview-img" src="" alt="Preview" class="max-w-full h-64 object-cover rounded-lg mx-auto mb-4">
+           <p id="preview-caption" class="text-gray-700 text-sm"></p>
+          </div>
+          <div id="no-preview" class="py-12">
+           <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewbox="0 0 48 48"><path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+           </svg>
+           <p class="mt-2 text-sm text-gray-500">Masukkan URL gambar untuk melihat preview</p>
+          </div>
+         </div>
+        </div>
+       </div>
+       <div class="mt-8 flex justify-end space-x-4"><button type="button" onclick="resetForm()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"> Reset </button> <button type="submit" id="upload-btn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"> <span id="upload-btn-text">Upload Sekarang</span>
+         <div id="upload-loading" class="loading-spinner ml-2 hidden"></div></button>
+       </div>
+      </form>
+     </div>
+    </div><!-- Connections Section -->
+    <div id="connections-section" class="p-8 hidden">
+     <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">Koneksi Platform</h2>
+      <p class="text-gray-600">Kelola koneksi ke platform media sosial Anda</p>
+     </div>
+     <div class="grid grid-cols-1 md:grid-cols-3 gap-6"><!-- Instagram Connection -->
+      <div class="bg-white rounded-xl card-shadow p-6">
+       <div class="flex items-center mb-4">
+        <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl mr-4"></div>
+        <div>
+         <h3 class="text-lg font-semibold text-gray-900">Instagram</h3>
+         <p id="instagram-connection-status" class="text-sm text-red-600">Tidak Terhubung</p>
+        </div>
+       </div>
+       <p class="text-gray-600 text-sm mb-4">Hubungkan akun Instagram untuk upload otomatis</p><button onclick="connectPlatform('instagram')" id="instagram-connect-btn" class="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 px-4 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors"> Hubungkan Instagram </button>
+      </div><!-- Facebook Connection -->
+      <div class="bg-white rounded-xl card-shadow p-6">
+       <div class="flex items-center mb-4">
+        <div class="w-12 h-12 bg-blue-600 rounded-xl mr-4"></div>
+        <div>
+         <h3 class="text-lg font-semibold text-gray-900">Facebook</h3>
+         <p id="facebook-connection-status" class="text-sm text-red-600">Tidak Terhubung</p>
+        </div>
+       </div>
+       <p class="text-gray-600 text-sm mb-4">Hubungkan akun Facebook untuk upload otomatis</p><button onclick="connectPlatform('facebook')" id="facebook-connect-btn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"> Hubungkan Facebook </button>
+      </div><!-- TikTok Connection -->
+      <div class="bg-white rounded-xl card-shadow p-6">
+       <div class="flex items-center mb-4">
+        <div class="w-12 h-12 bg-black rounded-xl mr-4"></div>
+        <div>
+         <h3 class="text-lg font-semibold text-gray-900">TikTok</h3>
+         <p id="tiktok-connection-status" class="text-sm text-red-600">Tidak Terhubung</p>
+        </div>
+       </div>
+       <p class="text-gray-600 text-sm mb-4">Hubungkan akun TikTok untuk upload otomatis</p><button onclick="connectPlatform('tiktok')" id="tiktok-connect-btn" class="w-full bg-black text-white py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors"> Hubungkan TikTok </button>
+      </div>
+     </div><!-- Connection Instructions -->
+     <div class="mt-8 bg-blue-50 rounded-xl p-6">
+      <h3 class="text-lg font-semibold text-blue-900 mb-3">Petunjuk Koneksi</h3>
+      <div class="space-y-2 text-sm text-blue-800">
+       <p>• Klik tombol "Hubungkan" untuk setiap platform yang ingin Anda gunakan</p>
+       <p>• Anda akan diarahkan ke halaman login platform tersebut</p>
+       <p>• Berikan izin akses untuk aplikasi ini</p>
+       <p>• Setelah berhasil, status akan berubah menjadi "Terhubung"</p>
+       <p class="text-blue-600 font-medium mt-3">⚠️ Demo: Koneksi platform ini adalah simulasi untuk tujuan demonstrasi</p>
+      </div>
+     </div>
+    </div><!-- Analytics Section -->
+    <div id="analytics-section" class="p-8 hidden">
+     <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">Analisis Konten</h2>
+      <p class="text-gray-600">Analisis mendalam tentang performa upload konten Anda</p>
+     </div><!-- Analytics Overview -->
+     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8"><!-- Upload Status Chart -->
+      <div class="bg-white rounded-xl card-shadow p-6">
+       <h3 class="text-lg font-semibold text-gray-900 mb-4">Status Upload</h3>
+       <div class="space-y-4">
+        <div class="flex items-center justify-between">
+         <div class="flex items-center">
+          <div class="w-4 h-4 bg-green-500 rounded-full mr-3"></div><span class="text-gray-700">Berhasil</span>
+         </div>
+         <div class="text-right"><span id="analytics-success-count" class="font-semibold text-gray-900">0</span> <span id="analytics-success-percent" class="text-sm text-gray-500 ml-1">(0%)</span>
+         </div>
+        </div>
+        <div class="flex items-center justify-between">
+         <div class="flex items-center">
+          <div class="w-4 h-4 bg-yellow-500 rounded-full mr-3"></div><span class="text-gray-700">Menunggu</span>
+         </div>
+         <div class="text-right"><span id="analytics-pending-count" class="font-semibold text-gray-900">0</span> <span id="analytics-pending-percent" class="text-sm text-gray-500 ml-1">(0%)</span>
+         </div>
+        </div>
+        <div class="flex items-center justify-between">
+         <div class="flex items-center">
+          <div class="w-4 h-4 bg-blue-500 rounded-full mr-3"></div><span class="text-gray-700">Sedang Upload</span>
+         </div>
+         <div class="text-right"><span id="analytics-uploading-count" class="font-semibold text-gray-900">0</span> <span id="analytics-uploading-percent" class="text-sm text-gray-500 ml-1">(0%)</span>
+         </div>
+        </div>
+        <div class="flex items-center justify-between">
+         <div class="flex items-center">
+          <div class="w-4 h-4 bg-red-500 rounded-full mr-3"></div><span class="text-gray-700">Gagal</span>
+         </div>
+         <div class="text-right"><span id="analytics-failed-count" class="font-semibold text-gray-900">0</span> <span id="analytics-failed-percent" class="text-sm text-gray-500 ml-1">(0%)</span>
+         </div>
+        </div>
+       </div>
+      </div><!-- Platform Distribution -->
+      <div class="bg-white rounded-xl card-shadow p-6">
+       <h3 class="text-lg font-semibold text-gray-900 mb-4">Distribusi Platform</h3>
+       <div id="platform-analytics" class="space-y-4"><!-- Platform stats will be populated here -->
+       </div>
+      </div>
+     </div><!-- Detailed Analytics -->
+     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8"><!-- Success Rate -->
+      <div class="bg-white rounded-xl card-shadow p-6">
+       <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Tingkat Keberhasilan</h3>
+        <div class="p-2 bg-green-100 rounded-lg">
+         <svg class="w-5 h-5 text-green-600" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+         </svg>
+        </div>
+       </div>
+       <div class="text-3xl font-bold text-gray-900 mb-2" id="success-rate">
+        0%
+       </div>
+       <p class="text-sm text-gray-600">dari total upload</p>
+      </div><!-- Average Upload Time -->
+      <div class="bg-white rounded-xl card-shadow p-6">
+       <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Rata-rata Waktu</h3>
+        <div class="p-2 bg-blue-100 rounded-lg">
+         <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
+         </svg>
+        </div>
+       </div>
+       <div class="text-3xl font-bold text-gray-900 mb-2" id="avg-upload-time">
+        0s
+       </div>
+       <p class="text-sm text-gray-600">untuk menyelesaikan upload</p>
+      </div><!-- Most Active Platform -->
+      <div class="bg-white rounded-xl card-shadow p-6">
+       <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Platform Terfavorit</h3>
+        <div class="p-2 bg-purple-100 rounded-lg">
+         <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewbox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+         </svg>
+        </div>
+       </div>
+       <div class="text-2xl font-bold text-gray-900 mb-2" id="most-active-platform">
+        -
+       </div>
+       <p class="text-sm text-gray-600" id="most-active-count">0 upload</p>
+      </div>
+     </div><!-- Upload Timeline -->
+     <div class="bg-white rounded-xl card-shadow p-6 mb-8">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Timeline Upload (7 Hari Terakhir)</h3>
+      <div id="upload-timeline" class="space-y-3"><!-- Timeline will be populated here -->
+      </div>
+     </div><!-- Content Performance -->
+     <div class="bg-white rounded-xl card-shadow">
+      <div class="p-6 border-b border-gray-200">
+       <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-gray-900">Performa Konten</h3><select id="performance-filter" class="border border-gray-300 rounded-lg px-3 py-1 text-sm"> <option value="all">Semua Status</option> <option value="success">Berhasil</option> <option value="failed">Gagal</option> <option value="pending">Menunggu</option> </select>
+       </div>
+      </div>
+      <div id="content-performance" class="divide-y divide-gray-200"><!-- Content performance will be populated here -->
+      </div>
+     </div>
+    </div><!-- History Section -->
+    <div id="history-section" class="p-8 hidden">
+     <div class="mb-8">
+      <h2 class="text-3xl font-bold text-gray-900 mb-2">Riwayat Upload</h2>
+      <p class="text-gray-600">Lihat semua aktivitas upload konten Anda</p>
+     </div>
+     <div class="bg-white rounded-xl card-shadow">
+      <div class="p-6 border-b border-gray-200">
+       <div class="flex justify-between items-center">
+        <h3 class="text-lg font-semibold text-gray-900">Semua Upload</h3><button onclick="refreshHistory()" class="text-blue-600 hover:text-blue-700 text-sm font-medium"> Refresh </button>
+       </div>
+      </div>
+      <div id="upload-history" class="divide-y divide-gray-200"><!-- History items will be populated here -->
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+        // Global variables
+        let currentData = [];
+        let platformConnections = {
+            instagram: false,
+            facebook: false,
+            tiktok: false
+        };
+
+        // Default configuration
+        const defaultConfig = {
+            app_title: "Social Media Auto Uploader",
+            welcome_message: "Kelola dan upload konten ke media sosial secara otomatis"
+        };
+
+        // Data handler for SDK
+        const dataHandler = {
+            onDataChanged(data) {
+                currentData = data;
+                updateDashboardStats();
+                updateRecentUploads();
+                updateUploadHistory();
+            }
+        };
+
+        // Element SDK configuration
+        const elementConfig = {
+            defaultConfig: defaultConfig,
+            onConfigChange: async (config) => {
+                const appTitle = config.app_title || defaultConfig.app_title;
+                const welcomeMessage = config.welcome_message || defaultConfig.welcome_message;
+                
+                document.getElementById('app-title').textContent = appTitle;
+                document.getElementById('welcome-message').textContent = welcomeMessage;
+            },
+            mapToCapabilities: (config) => ({
+                recolorables: [],
+                borderables: [],
+                fontEditable: undefined,
+                fontSizeable: undefined
+            }),
+            mapToEditPanelValues: (config) => new Map([
+                ["app_title", config.app_title || defaultConfig.app_title],
+                ["welcome_message", config.welcome_message || defaultConfig.welcome_message]
+            ])
+        };
+
+        // Initialize SDKs
+        async function initializeApp() {
+            try {
+                // Initialize Element SDK
+                if (window.elementSdk) {
+                    await window.elementSdk.init(elementConfig);
+                }
+
+                // Initialize Data SDK
+                if (window.dataSdk) {
+                    const result = await window.dataSdk.init(dataHandler);
+                    if (!result.isOk) {
+                        console.error("Failed to initialize data SDK");
+                    }
+                }
+
+                // Set initial active navigation
+                showSection('dashboard');
+            } catch (error) {
+                console.error("Failed to initialize app:", error);
+            }
+        }
+
+        // Google Drive URL conversion function
+        function convertGoogleDriveUrl() {
+            const input = document.getElementById('image-url');
+            const originalUrl = input.value.trim();
+            
+            if (!originalUrl) {
+                showToast('Masukkan URL Google Drive terlebih dahulu', 'error');
+                return;
+            }
+
+            // Extract file ID from Google Drive URL
+            let fileId = '';
+            
+            // Pattern 1: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+            const pattern1 = /\/file\/d\/([a-zA-Z0-9-_]+)/;
+            const match1 = originalUrl.match(pattern1);
+            
+            // Pattern 2: https://drive.google.com/open?id=FILE_ID
+            const pattern2 = /[?&]id=([a-zA-Z0-9-_]+)/;
+            const match2 = originalUrl.match(pattern2);
+            
+            if (match1) {
+                fileId = match1[1];
+            } else if (match2) {
+                fileId = match2[1];
+            } else {
+                showToast('Format URL Google Drive tidak valid. Pastikan URL dapat diakses publik.', 'error');
+                return;
+            }
+
+            // Convert to direct image URL
+            const directUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+            input.value = directUrl;
+            
+            showToast('URL berhasil dikonversi! Preview akan muncul jika gambar dapat diakses.', 'success');
+            
+            // Trigger preview update
+            updateImagePreview(directUrl);
+        }
+
+        // Navigation functions
+        function showSection(sectionName) {
+            // Hide all sections
+            const sections = ['dashboard', 'upload', 'connections', 'history', 'analytics'];
+            sections.forEach(section => {
+                document.getElementById(`${section}-section`).classList.add('hidden');
+                document.getElementById(`nav-${section}`).classList.remove('bg-blue-800', 'text-white');
+                document.getElementById(`nav-${section}`).classList.add('text-blue-100');
+            });
+
+            // Show selected section
+            document.getElementById(`${sectionName}-section`).classList.remove('hidden');
+            document.getElementById(`nav-${sectionName}`).classList.add('bg-blue-800', 'text-white');
+            document.getElementById(`nav-${sectionName}`).classList.remove('text-blue-100');
+            
+            // Update analytics when analytics section is shown
+            if (sectionName === 'analytics') {
+                updateAnalytics();
+            }
+        }
+
+        // Dashboard functions
+        function updateDashboardStats() {
+            const total = currentData.length;
+            const success = currentData.filter(item => item.status === 'success').length;
+            const pending = currentData.filter(item => item.status === 'pending').length;
+            const failed = currentData.filter(item => item.status === 'failed').length;
+
+            document.getElementById('total-uploads').textContent = total;
+            document.getElementById('success-uploads').textContent = success;
+            document.getElementById('pending-uploads').textContent = pending;
+            document.getElementById('failed-uploads').textContent = failed;
+        }
+
+        function updateRecentUploads() {
+            const recentContainer = document.getElementById('recent-uploads');
+            const recentUploads = currentData.slice(-5).reverse();
+
+            if (recentUploads.length === 0) {
+                recentContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Belum ada upload yang dilakukan</p>';
+                return;
+            }
+
+            const html = recentUploads.map(upload => `
+                <div class="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
+                    <div class="flex items-center">
+                        <img src="${upload.image_url}" alt="Preview" class="w-12 h-12 object-cover rounded-lg mr-4" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCA0OCA0OCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjggOEgxMmE0IDQgMCAwMC00IDR2MjBtMzItMTJ2OG0wIDB2OGE0IDQgMCAwMS00IDRIMTJhNCA0IDAgMDEtNC00di00bTMyLTRsLTMuMTcyLTMuMTcyYTQgNCAwIDAwLTUuNjU2IDBMMjggMjhNOCAzMmw5LjE3Mi05LjE3MmE0IDQgMCAwMTUuNjU2IDBMMjggMjhtMCAwbDQgNG00LTI0aDhtLTQtNHY4bS0xMiA0aC4wMiIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg=='; this.alt='Image failed to load';">
+                        <div>
+                            <p class="font-medium text-gray-900">${upload.caption.substring(0, 50)}${upload.caption.length > 50 ? '...' : ''}</p>
+                            <p class="text-sm text-gray-500">${upload.platforms}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="status-${upload.status} font-medium text-sm">${getStatusText(upload.status)}</span>
+                        <p class="text-xs text-gray-500">${formatDate(upload.created_at)}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            recentContainer.innerHTML = html;
+        }
+
+        // Upload functions
+        function setupUploadForm() {
+            const form = document.getElementById('upload-form');
+            const imageUrlInput = document.getElementById('image-url');
+            const captionInput = document.getElementById('caption');
+
+            // Image preview
+            imageUrlInput.addEventListener('input', function() {
+                const url = this.value.trim();
+                if (url) {
+                    updateImagePreview(url);
+                } else {
+                    hideImagePreview();
+                }
+            });
+
+            // Caption preview
+            captionInput.addEventListener('input', function() {
+                const caption = this.value.trim();
+                document.getElementById('preview-caption').textContent = caption;
+            });
+
+            // Form submission
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await handleUpload();
+            });
+        }
+
+        function updateImagePreview(url) {
+            const previewImg = document.getElementById('preview-img');
+            const imagePreview = document.getElementById('image-preview');
+            const noPreview = document.getElementById('no-preview');
+
+            previewImg.src = url;
+            previewImg.onload = function() {
+                imagePreview.classList.remove('hidden');
+                noPreview.classList.add('hidden');
+            };
+            previewImg.onerror = function() {
+                hideImagePreview();
+                showToast('URL gambar tidak valid atau tidak dapat diakses', 'error');
+            };
+        }
+
+        function hideImagePreview() {
+            document.getElementById('image-preview').classList.add('hidden');
+            document.getElementById('no-preview').classList.remove('hidden');
+        }
+
+        async function handleUpload() {
+            if (currentData.length >= 999) {
+                showToast('Maksimum 999 upload telah tercapai. Hapus beberapa item terlebih dahulu.', 'error');
+                return;
+            }
+
+            const imageUrl = document.getElementById('image-url').value.trim();
+            const caption = document.getElementById('caption').value.trim();
+            const selectedPlatforms = Array.from(document.querySelectorAll('input[name="platforms"]:checked'))
+                .map(cb => cb.value);
+
+            // Validation
+            if (!imageUrl) {
+                showToast('URL gambar harus diisi', 'error');
+                return;
+            }
+
+            if (!caption) {
+                showToast('Caption harus diisi', 'error');
+                return;
+            }
+
+            if (selectedPlatforms.length === 0) {
+                showToast('Pilih minimal satu platform media sosial', 'error');
+                return;
+            }
+
+            // Check platform connections
+            const unconnectedPlatforms = selectedPlatforms.filter(platform => !platformConnections[platform]);
+            if (unconnectedPlatforms.length > 0) {
+                showToast(`Platform ${unconnectedPlatforms.join(', ')} belum terhubung`, 'error');
+                return;
+            }
+
+            // Show loading state
+            setUploadLoading(true);
+
+            try {
+                const uploadData = {
+                    id: generateId(),
+                    image_url: imageUrl,
+                    caption: caption,
+                    platforms: selectedPlatforms.join(', '),
+                    status: 'pending',
+                    scheduled_time: new Date().toISOString(),
+                    created_at: new Date().toISOString(),
+                    uploaded_at: ''
+                };
+
+                const result = await window.dataSdk.create(uploadData);
+
+                if (result.isOk) {
+                    showToast('Upload berhasil dijadwalkan!', 'success');
+                    resetForm();
+                    
+                    // Simulate upload process
+                    setTimeout(() => simulateUploadProcess(uploadData.id), 2000);
+                } else {
+                    showToast('Gagal menyimpan data upload', 'error');
+                }
+            } catch (error) {
+                showToast('Terjadi kesalahan saat upload', 'error');
+            } finally {
+                setUploadLoading(false);
+            }
+        }
+
+        function simulateUploadProcess(uploadId) {
+            // Find the upload in current data
+            const upload = currentData.find(item => item.id === uploadId);
+            if (!upload) return;
+
+            // Update status to uploading
+            upload.status = 'uploading';
+            window.dataSdk.update(upload);
+
+            // Simulate upload completion after 3-5 seconds
+            setTimeout(async () => {
+                const success = Math.random() > 0.2; // 80% success rate
+                upload.status = success ? 'success' : 'failed';
+                upload.uploaded_at = success ? new Date().toISOString() : '';
+                
+                const result = await window.dataSdk.update(upload);
+                if (result.isOk) {
+                    showToast(
+                        success ? 'Upload berhasil ke media sosial!' : 'Upload gagal, silakan coba lagi',
+                        success ? 'success' : 'error'
+                    );
+                }
+            }, Math.random() * 3000 + 2000);
+        }
+
+        function setUploadLoading(loading) {
+            const btn = document.getElementById('upload-btn');
+            const btnText = document.getElementById('upload-btn-text');
+            const loadingSpinner = document.getElementById('upload-loading');
+
+            if (loading) {
+                btn.disabled = true;
+                btn.classList.add('opacity-75');
+                btnText.textContent = 'Mengupload...';
+                loadingSpinner.classList.remove('hidden');
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('opacity-75');
+                btnText.textContent = 'Upload Sekarang';
+                loadingSpinner.classList.add('hidden');
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('upload-form').reset();
+            hideImagePreview();
+            document.getElementById('preview-caption').textContent = '';
+        }
+
+        // Platform connection functions
+        function connectPlatform(platform) {
+            // Simulate connection process
+            showToast(`Menghubungkan ke ${platform.charAt(0).toUpperCase() + platform.slice(1)}...`, 'info');
+            
+            setTimeout(() => {
+                platformConnections[platform] = true;
+                updatePlatformStatus(platform, true);
+                showToast(`Berhasil terhubung ke ${platform.charAt(0).toUpperCase() + platform.slice(1)}!`, 'success');
+            }, 2000);
+        }
+
+        function updatePlatformStatus(platform, connected) {
+            const statusElements = [
+                document.getElementById(`${platform}-status`),
+                document.getElementById(`${platform}-connection-status`)
+            ];
+
+            const buttonElement = document.getElementById(`${platform}-connect-btn`);
+
+            statusElements.forEach(element => {
+                if (element) {
+                    element.textContent = connected ? 'Terhubung' : 'Tidak Terhubung';
+                    element.className = connected 
+                        ? 'ml-2 text-xs px-2 py-1 rounded-full bg-green-100 text-green-600'
+                        : 'ml-2 text-xs px-2 py-1 rounded-full bg-red-100 text-red-600';
+                }
+            });
+
+            if (buttonElement) {
+                buttonElement.textContent = connected 
+                    ? `Putuskan ${platform.charAt(0).toUpperCase() + platform.slice(1)}`
+                    : `Hubungkan ${platform.charAt(0).toUpperCase() + platform.slice(1)}`;
+                
+                if (connected) {
+                    buttonElement.onclick = () => disconnectPlatform(platform);
+                } else {
+                    buttonElement.onclick = () => connectPlatform(platform);
+                }
+            }
+        }
+
+        function disconnectPlatform(platform) {
+            platformConnections[platform] = false;
+            updatePlatformStatus(platform, false);
+            showToast(`Terputus dari ${platform.charAt(0).toUpperCase() + platform.slice(1)}`, 'info');
+        }
+
+        // History functions
+        function updateUploadHistory() {
+            const historyContainer = document.getElementById('upload-history');
+            
+            if (currentData.length === 0) {
+                historyContainer.innerHTML = '<div class="p-8 text-center text-gray-500">Belum ada riwayat upload</div>';
+                return;
+            }
+
+            const sortedData = [...currentData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            const html = sortedData.map(upload => `
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start space-x-4">
+                            <img src="${upload.image_url}" alt="Upload" class="w-16 h-16 object-cover rounded-lg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCA0OCA0OCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjggOEgxMmE0IDQgMCAwMC00IDR2MjBtMzItMTJ2OG0wIDB2OGE0IDQgMCAwMS00IDRIMTJhNCA0IDAgMDEtNC00di00bTMyLTRsLTMuMTcyLTMuMTcyYTQgNCAwIDAwLTUuNjU2IDBMMjggMjhNOCAzMmw5LjE3Mi05LjE3MmE0IDQgMCAwMTUuNjU2IDBMMjggMjhtMCAwbDQgNG00LTI0aDhtLTQtNHY4bS0xMiA0aC4wMiIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg=='; this.alt='Image failed to load';">
+                            <div class="flex-1">
+                                <p class="font-medium text-gray-900 mb-1">${upload.caption}</p>
+                                <p class="text-sm text-gray-600 mb-2">Platform: ${upload.platforms}</p>
+                                <p class="text-xs text-gray-500">Dibuat: ${formatDate(upload.created_at)}</p>
+                                ${upload.uploaded_at ? `<p class="text-xs text-gray-500">Diupload: ${formatDate(upload.uploaded_at)}</p>` : ''}
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="status-${upload.status} font-medium text-sm px-3 py-1 rounded-full bg-gray-100">
+                                ${getStatusText(upload.status)}
+                            </span>
+                            <button onclick="deleteUpload('${upload.id}')" class="ml-2 text-red-600 hover:text-red-700 text-sm">
+                                Hapus
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            historyContainer.innerHTML = html;
+        }
+
+        async function deleteUpload(uploadId) {
+            const upload = currentData.find(item => item.id === uploadId);
+            if (!upload) return;
+
+            const result = await window.dataSdk.delete(upload);
+            if (result.isOk) {
+                showToast('Upload berhasil dihapus', 'success');
+            } else {
+                showToast('Gagal menghapus upload', 'error');
+            }
+        }
+
+        function refreshHistory() {
+            showToast('Riwayat diperbarui', 'info');
+            updateUploadHistory();
+        }
+
+        // Utility functions
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'Menunggu',
+                'uploading': 'Mengupload',
+                'success': 'Berhasil',
+                'failed': 'Gagal'
+            };
+            return statusMap[status] || status;
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // Analytics functions
+        function updateAnalytics() {
+            updateStatusAnalytics();
+            updatePlatformAnalytics();
+            updateDetailedAnalytics();
+            updateUploadTimeline();
+            updateContentPerformance();
+        }
+
+        function updateStatusAnalytics() {
+            const total = currentData.length;
+            const success = currentData.filter(item => item.status === 'success').length;
+            const pending = currentData.filter(item => item.status === 'pending').length;
+            const uploading = currentData.filter(item => item.status === 'uploading').length;
+            const failed = currentData.filter(item => item.status === 'failed').length;
+
+            // Update counts and percentages
+            document.getElementById('analytics-success-count').textContent = success;
+            document.getElementById('analytics-success-percent').textContent = `(${total > 0 ? Math.round((success / total) * 100) : 0}%)`;
+            
+            document.getElementById('analytics-pending-count').textContent = pending;
+            document.getElementById('analytics-pending-percent').textContent = `(${total > 0 ? Math.round((pending / total) * 100) : 0}%)`;
+            
+            document.getElementById('analytics-uploading-count').textContent = uploading;
+            document.getElementById('analytics-uploading-percent').textContent = `(${total > 0 ? Math.round((uploading / total) * 100) : 0}%)`;
+            
+            document.getElementById('analytics-failed-count').textContent = failed;
+            document.getElementById('analytics-failed-percent').textContent = `(${total > 0 ? Math.round((failed / total) * 100) : 0}%)`;
+        }
+
+        function updatePlatformAnalytics() {
+            const platformStats = {};
+            
+            currentData.forEach(upload => {
+                const platforms = upload.platforms.split(', ');
+                platforms.forEach(platform => {
+                    if (!platformStats[platform]) {
+                        platformStats[platform] = { total: 0, success: 0 };
+                    }
+                    platformStats[platform].total++;
+                    if (upload.status === 'success') {
+                        platformStats[platform].success++;
+                    }
+                });
+            });
+
+            const container = document.getElementById('platform-analytics');
+            
+            if (Object.keys(platformStats).length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">Belum ada data platform</p>';
+                return;
+            }
+
+            const html = Object.entries(platformStats).map(([platform, stats]) => {
+                const successRate = stats.total > 0 ? Math.round((stats.success / stats.total) * 100) : 0;
+                const platformColors = {
+                    'instagram': 'bg-gradient-to-r from-purple-500 to-pink-500',
+                    'facebook': 'bg-blue-600',
+                    'tiktok': 'bg-black'
+                };
+                
+                return `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 ${platformColors[platform] || 'bg-gray-500'} rounded-full mr-3"></div>
+                            <span class="text-gray-700 capitalize">${platform}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-semibold text-gray-900">${stats.total}</span>
+                            <span class="text-sm text-gray-500 ml-1">(${successRate}% berhasil)</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function updateDetailedAnalytics() {
+            const total = currentData.length;
+            const success = currentData.filter(item => item.status === 'success').length;
+            const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
+            
+            document.getElementById('success-rate').textContent = `${successRate}%`;
+
+            // Calculate average upload time (simulated)
+            const completedUploads = currentData.filter(item => item.status === 'success' && item.uploaded_at);
+            let avgTime = 0;
+            
+            if (completedUploads.length > 0) {
+                const totalTime = completedUploads.reduce((sum, upload) => {
+                    const start = new Date(upload.created_at);
+                    const end = new Date(upload.uploaded_at);
+                    return sum + (end - start);
+                }, 0);
+                avgTime = Math.round(totalTime / completedUploads.length / 1000); // Convert to seconds
+            }
+            
+            document.getElementById('avg-upload-time').textContent = `${avgTime}s`;
+
+            // Find most active platform
+            const platformCounts = {};
+            currentData.forEach(upload => {
+                const platforms = upload.platforms.split(', ');
+                platforms.forEach(platform => {
+                    platformCounts[platform] = (platformCounts[platform] || 0) + 1;
+                });
+            });
+
+            const mostActive = Object.entries(platformCounts).sort((a, b) => b[1] - a[1])[0];
+            if (mostActive) {
+                document.getElementById('most-active-platform').textContent = mostActive[0].charAt(0).toUpperCase() + mostActive[0].slice(1);
+                document.getElementById('most-active-count').textContent = `${mostActive[1]} upload`;
+            } else {
+                document.getElementById('most-active-platform').textContent = '-';
+                document.getElementById('most-active-count').textContent = '0 upload';
+            }
+        }
+
+        function updateUploadTimeline() {
+            const container = document.getElementById('upload-timeline');
+            const last7Days = [];
+            
+            // Generate last 7 days
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                last7Days.push({
+                    date: date,
+                    dateStr: date.toLocaleDateString('id-ID', { weekday: 'short', month: 'short', day: 'numeric' }),
+                    uploads: 0,
+                    success: 0
+                });
+            }
+
+            // Count uploads per day
+            currentData.forEach(upload => {
+                const uploadDate = new Date(upload.created_at);
+                const dayIndex = last7Days.findIndex(day => 
+                    day.date.toDateString() === uploadDate.toDateString()
+                );
+                
+                if (dayIndex !== -1) {
+                    last7Days[dayIndex].uploads++;
+                    if (upload.status === 'success') {
+                        last7Days[dayIndex].success++;
+                    }
+                }
+            });
+
+            const maxUploads = Math.max(...last7Days.map(day => day.uploads), 1);
+            
+            const html = last7Days.map(day => {
+                const percentage = (day.uploads / maxUploads) * 100;
+                return `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <span class="text-sm text-gray-600 w-20">${day.dateStr}</span>
+                            <div class="flex-1 bg-gray-200 rounded-full h-2 w-32">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-medium text-gray-900">${day.uploads}</span>
+                            <span class="text-xs text-gray-500 ml-1">(${day.success} berhasil)</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html || '<p class="text-gray-500 text-center py-4">Belum ada data timeline</p>';
+        }
+
+        function updateContentPerformance() {
+            const container = document.getElementById('content-performance');
+            const filter = document.getElementById('performance-filter').value;
+            
+            let filteredData = currentData;
+            if (filter !== 'all') {
+                filteredData = currentData.filter(item => item.status === filter);
+            }
+
+            if (filteredData.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-gray-500">Tidak ada data untuk filter yang dipilih</div>';
+                return;
+            }
+
+            const sortedData = [...filteredData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            const html = sortedData.map(upload => `
+                <div class="p-4 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <img src="${upload.image_url}" alt="Content" class="w-12 h-12 object-cover rounded-lg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCA0OCA0OCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjggOEgxMmE0IDQgMCAwMC00IDR2MjBtMzItMTJ2OG0wIDB2OGE0IDQgMCAwMS00IDRIMTJhNCA0IDAgMDEtNC00di00bTMyLTRsLTMuMTcyLTMuMTcyYTQgNCAwIDAwLTUuNjU2IDBMMjggMjhNOCAzMmw5LjE3Mi05LjE3MmE0IDQgMCAwMTUuNjU2IDBMMjggMjhtMCAwbDQgNG00LTI0aDhtLTQtNHY4bS0xMiA0aC4wMiIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg=='; this.alt='Image failed to load';">
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">${upload.caption.substring(0, 60)}${upload.caption.length > 60 ? '...' : ''}</p>
+                                <p class="text-xs text-gray-500">${upload.platforms} • ${formatDate(upload.created_at)}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="status-${upload.status} font-medium text-xs px-2 py-1 rounded-full bg-gray-100">
+                                ${getStatusText(upload.status)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        // Initialize app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupUploadForm();
+            
+            // Initialize platform status
+            Object.keys(platformConnections).forEach(platform => {
+                updatePlatformStatus(platform, platformConnections[platform]);
+            });
+
+            // Setup performance filter
+            document.getElementById('performance-filter').addEventListener('change', updateContentPerformance);
+        });
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'997d70b9e31758ef',t:'MTc2MjAyMTU4NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
