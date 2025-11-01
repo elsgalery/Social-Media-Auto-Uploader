@@ -46,7 +46,7 @@ const elementConfig = {
     ])
 };
 
-// Initialize SDKs
+// Initialize the application and SDKs
 async function initializeApp() {
     try {
         // Initialize Element SDK
@@ -69,7 +69,7 @@ async function initializeApp() {
     }
 }
 
-// Google Drive URL conversion function
+// Convert Google Drive sharing URL to direct image URL
 function convertGoogleDriveUrl() {
     const input = document.getElementById('image-url');
     const originalUrl = input.value.trim();
@@ -416,4 +416,338 @@ function updateUploadHistory() {
                         Hapus
                     </button>
                 </div>
-            </
+            </div>
+        </div>
+    `).join('');
+
+    historyContainer.innerHTML = html;
+}
+
+/**
+ * Delete upload record
+ * @param {string} uploadId - ID of upload to delete
+ */
+async function deleteUpload(uploadId) {
+    const upload = currentData.find(item => item.id === uploadId);
+    if (!upload) return;
+
+    const result = await window.dataSdk.delete(upload);
+    if (result.isOk) {
+        showToast('Upload berhasil dihapus', 'success');
+    } else {
+        showToast('Gagal menghapus upload', 'error');
+    }
+}
+
+/**
+ * Refresh upload history
+ */
+function refreshHistory() {
+    showToast('Riwayat diperbarui', 'info');
+    updateUploadHistory();
+}
+
+/**
+ * Update all analytics data
+ */
+function updateAnalytics() {
+    updateStatusAnalytics();
+    updatePlatformAnalytics();
+    updateDetailedAnalytics();
+    updateUploadTimeline();
+    updateContentPerformance();
+}
+
+/**
+ * Update status analytics
+ */
+function updateStatusAnalytics() {
+    const total = currentData.length;
+    const success = currentData.filter(item => item.status === 'success').length;
+    const pending = currentData.filter(item => item.status === 'pending').length;
+    const uploading = currentData.filter(item => item.status === 'uploading').length;
+    const failed = currentData.filter(item => item.status === 'failed').length;
+
+    // Update counts and percentages
+    document.getElementById('analytics-success-count').textContent = success;
+    document.getElementById('analytics-success-percent').textContent = `(${total > 0 ? Math.round((success / total) * 100) : 0}%)`;
+    
+    document.getElementById('analytics-pending-count').textContent = pending;
+    document.getElementById('analytics-pending-percent').textContent = `(${total > 0 ? Math.round((pending / total) * 100) : 0}%)`;
+    
+    document.getElementById('analytics-uploading-count').textContent = uploading;
+    document.getElementById('analytics-uploading-percent').textContent = `(${total > 0 ? Math.round((uploading / total) * 100) : 0}%)`;
+    
+    document.getElementById('analytics-failed-count').textContent = failed;
+    document.getElementById('analytics-failed-percent').textContent = `(${total > 0 ? Math.round((failed / total) * 100) : 0}%)`;
+}
+
+/**
+ * Update platform analytics
+ */
+function updatePlatformAnalytics() {
+    const platformStats = {};
+    
+    currentData.forEach(upload => {
+        const platforms = upload.platforms.split(', ');
+        platforms.forEach(platform => {
+            if (!platformStats[platform]) {
+                platformStats[platform] = { total: 0, success: 0 };
+            }
+            platformStats[platform].total++;
+            if (upload.status === 'success') {
+                platformStats[platform].success++;
+            }
+        });
+    });
+
+    const container = document.getElementById('platform-analytics');
+    
+    if (Object.keys(platformStats).length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-center py-4">Belum ada data platform</p>';
+        return;
+    }
+
+    const html = Object.entries(platformStats).map(([platform, stats]) => {
+        const successRate = stats.total > 0 ? Math.round((stats.success / stats.total) * 100) : 0;
+        const platformColors = {
+            'instagram': 'bg-gradient-to-r from-purple-500 to-pink-500',
+            'facebook': 'bg-blue-600',
+            'tiktok': 'bg-black'
+        };
+        
+        return `
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="w-4 h-4 ${platformColors[platform] || 'bg-gray-500'} rounded-full mr-3"></div>
+                    <span class="text-gray-700 capitalize">${platform}</span>
+                </div>
+                <div class="text-right">
+                    <span class="font-semibold text-gray-900">${stats.total}</span>
+                    <span class="text-sm text-gray-500 ml-1">(${successRate}% berhasil)</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = html;
+}
+
+/**
+ * Update detailed analytics
+ */
+function updateDetailedAnalytics() {
+    const total = currentData.length;
+    const success = currentData.filter(item => item.status === 'success').length;
+    const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
+    
+    document.getElementById('success-rate').textContent = `${successRate}%`;
+
+    // Calculate average upload time (simulated)
+    const completedUploads = currentData.filter(item => item.status === 'success' && item.uploaded_at);
+    let avgTime = 0;
+    
+    if (completedUploads.length > 0) {
+        const totalTime = completedUploads.reduce((sum, upload) => {
+            const start = new Date(upload.created_at);
+            const end = new Date(upload.uploaded_at);
+            return sum + (end - start);
+        }, 0);
+        avgTime = Math.round(totalTime / completedUploads.length / 1000); // Convert to seconds
+    }
+    
+    document.getElementById('avg-upload-time').textContent = `${avgTime}s`;
+
+    // Find most active platform
+    const platformCounts = {};
+    currentData.forEach(upload => {
+        const platforms = upload.platforms.split(', ');
+        platforms.forEach(platform => {
+            platformCounts[platform] = (platformCounts[platform] || 0) + 1;
+        });
+    });
+
+    const mostActive = Object.entries(platformCounts).sort((a, b) => b[1] - a[1])[0];
+    if (mostActive) {
+        document.getElementById('most-active-platform').textContent = mostActive[0].charAt(0).toUpperCase() + mostActive[0].slice(1);
+        document.getElementById('most-active-count').textContent = `${mostActive[1]} upload`;
+    } else {
+        document.getElementById('most-active-platform').textContent = '-';
+        document.getElementById('most-active-count').textContent = '0 upload';
+    }
+}
+
+/**
+ * Update upload timeline chart
+ */
+function updateUploadTimeline() {
+    const container = document.getElementById('upload-timeline');
+    const last7Days = [];
+    
+    // Generate last 7 days
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        last7Days.push({
+            date: date,
+            dateStr: date.toLocaleDateString('id-ID', { weekday: 'short', month: 'short', day: 'numeric' }),
+            uploads: 0,
+            success: 0
+        });
+    }
+
+    // Count uploads per day
+    currentData.forEach(upload => {
+        const uploadDate = new Date(upload.created_at);
+        const dayIndex = last7Days.findIndex(day => 
+            day.date.toDateString() === uploadDate.toDateString()
+        );
+        
+        if (dayIndex !== -1) {
+            last7Days[dayIndex].uploads++;
+            if (upload.status === 'success') {
+                last7Days[dayIndex].success++;
+            }
+        }
+    });
+
+    const maxUploads = Math.max(...last7Days.map(day => day.uploads), 1);
+    
+    const html = last7Days.map(day => {
+        const percentage = (day.uploads / maxUploads) * 100;
+        return `
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <span class="text-sm text-gray-600 w-20">${day.dateStr}</span>
+                    <div class="flex-1 bg-gray-200 rounded-full h-2 w-32">
+                        <div class="bg-blue-600 h-2 rounded-full" style="width: ${percentage}%"></div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="text-sm font-medium text-gray-900">${day.uploads}</span>
+                    <span class="text-xs text-gray-500 ml-1">(${day.success} berhasil)</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = html || '<p class="text-gray-500 text-center py-4">Belum ada data timeline</p>';
+}
+
+/**
+ * Update content performance list
+ */
+function updateContentPerformance() {
+    const container = document.getElementById('content-performance');
+    const filter = document.getElementById('performance-filter').value;
+    
+    let filteredData = currentData;
+    if (filter !== 'all') {
+        filteredData = currentData.filter(item => item.status === filter);
+    }
+
+    if (filteredData.length === 0) {
+        container.innerHTML = '<div class="p-8 text-center text-gray-500">Tidak ada data untuk filter yang dipilih</div>';
+        return;
+    }
+
+    const sortedData = [...filteredData].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    
+    const html = sortedData.map(upload => `
+        <div class="p-4 hover:bg-gray-50 transition-colors">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <img src="${upload.image_url}" alt="Content" class="w-12 h-12 object-cover rounded-lg" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCA0OCA0OCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMjggOEgxMmE0IDQgMCAwMC00IDR2MjBtMzItMTJ2OG0wIDB2OGE0IDQgMCAwMS00IDRIMTJhNCA0IDAgMDEtNC00di00bTMyLTRsLTMuMTcyLTMuMTcyYTQgNCAwIDAwLTUuNjU2IDBMMjggMjhNOCAzMmw5LjE3Mi05LjE3MmE0IDQgMCAwMTUuNjU2IDBMMjggMjhtMCAwbDQgNG00LTI0aDhtLTQtNHY4bS0xMiA0aC4wMiIgc3Ryb2tlPSIjOWNhM2FmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg=='; this.alt='Image failed to load';">
+                    <div>
+                        <p class="font-medium text-gray-900 text-sm">${upload.caption.substring(0, 60)}${upload.caption.length > 60 ? '...' : ''}</p>
+                        <p class="text-xs text-gray-500">${upload.platforms} • ${formatDate(upload.created_at)}</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <span class="status-${upload.status} font-medium text-xs px-2 py-1 rounded-full bg-gray-100">
+                        ${getStatusText(upload.status)}
+                    </span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = html;
+}
+
+// ===== UTILITY FUNCTIONS =====
+
+/**
+ * Generate unique ID
+ * @returns {string} Unique identifier
+ */
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+/**
+ * Format date to Indonesian locale
+ * @param {string} dateString - ISO date string
+ * @returns {string} Formatted date
+ */
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+/**
+ * Get status text in Indonesian
+ * @param {string} status - Status code
+ * @returns {string} Status text
+ */
+function getStatusText(status) {
+    const statusMap = {
+        'pending': 'Menunggu',
+        'uploading': 'Mengupload',
+        'success': 'Berhasil',
+        'failed': 'Gagal'
+    };
+    return statusMap[status] || status;
+}
+
+/**
+ * Show toast notification
+ * @param {string} message - Message to display
+ * @param {string} type - Toast type (info, success, error)
+ */
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => document.body.removeChild(toast), 300);
+    }, 3000);
+}
+
+// ===== EVENT LISTENERS =====
+
+/**
+ * Initialize app when DOM is loaded
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    setupUploadForm();
+    
+    // Initialize platform status
+    Object.keys(platformConnections).forEach(platform => {
+        updatePlatformStatus(platform, platformConnections[platform]);
+    });
+
+    // Setup performance filter
+    document.getElementById('performance-filter').addEventListener('change', updateContentPerformance);
+});
