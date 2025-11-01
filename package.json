@@ -1,16 +1,13 @@
 {
   "name": "social-media-auto-uploader",
   "version": "2.1.0",
-  "description": "Aplikasi web untuk mengelola dan mengupload konten ke berbagai platform media sosial secara otomatis",
+  "description": "Social Media Auto Uploader - Static Web App",
   "main": "index.html",
   "scripts": {
-    "start": "npx http-server . -p 3000 -o",
-    "dev": "npx live-server --port=3000 --open=/",
-    "build": "npm run minify:css && npm run minify:js",
-    "minify:css": "npx cleancss-cli css/styles.css -o css/styles.min.css",
-    "minify:js": "npx terser js/social-media-uploader.js -o js/social-media-uploader.min.js --compress --mangle",
-    "deploy": "npm run build && gh-pages -d .",
-    "test": "echo \"No tests specified\" && exit 0"
+    "build": "echo 'Static site ready for deployment'",
+    "start": "echo 'Static site started'",
+    "dev": "python3 -m http.server 8000",
+    "test": "echo 'No tests specified'"
   },
   "repository": {
     "type": "git",
@@ -18,25 +15,12 @@
   },
   "keywords": [
     "social-media",
-    "auto-uploader",
-    "instagram",
-    "facebook",
-    "tiktok",
+    "uploader",
     "javascript",
     "html5",
     "css3"
   ],
   "author": "Social Media Uploader Team",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/username/social-media-auto-uploader/issues"
-  },
-  "homepage": "https://username.github.io/social-media-auto-uploader",
-  "devDependencies": {
-    "clean-css-cli": "^5.6.2",
-    "gh-pages": "^6.1.1",
-    "http-server": "^14.1.1",
-    "live-server": "^1.2.2",
-    "terser": "^5.26.0"
-  }
+  "homepage": "https://username.github.io/social-media-auto-uploader"
 }
